@@ -1,0 +1,72 @@
+### Operating System ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### Maven / Java ###
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.class
+*.war
+*.ear
+*.nar
+# Ignore all .jar files EXCEPT the Maven Wrapper
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+### Logs ###
+logs/
+*.log
+
+### Secrets & Environments (CRITICAL) ###
+# Never push your API keys, DB passwords, or Master Encryption Key!
+.env
+.env.*
+application-local.yml
+application-secret.yml
+application-dev.yml
+secrets/
+
+### Docker & Databases ###
+# If you mapped your Postgres or Redis data to a local folder, ignore it!
+docker-data/
+pgdata/
+postgres-data/
+redis-data/
+*.rdb
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
