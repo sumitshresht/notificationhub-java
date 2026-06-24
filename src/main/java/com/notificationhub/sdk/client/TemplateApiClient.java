@@ -27,44 +27,44 @@ public class TemplateApiClient {
         this.baseUrl = baseUrl;
     }
 
-    /**
-     * Creates a new Notification Template.
-     */
     public Map<String, Object> create(TemplateRequest request) throws NotificationHubException {
         return executePostPut(baseUrl + "/api/v1/templates", "POST", request);
     }
 
-    /**
-     * Updates an existing Notification Template.
-     */
     public Map<String, Object> update(UUID templateId, TemplateRequest request) throws NotificationHubException {
         return executePostPut(baseUrl + "/api/v1/templates/" + templateId, "PUT", request);
     }
 
-    /**
-     * Fetches a specific Template by ID.
-     */
     public Map<String, Object> get(UUID templateId) throws NotificationHubException {
         return executeGetDelete(baseUrl + "/api/v1/templates/" + templateId, "GET");
     }
 
-    /**
-     * Deletes a Template by ID.
-     */
+    // 🟢 ADDED: List templates with Spring Pagination
+    public Map<String, Object> list(int page, int size) throws NotificationHubException {
+        return executeGetDelete(baseUrl + "/api/v1/templates?page=" + page + "&size=" + size, "GET");
+    }
+
     public void delete(UUID templateId) throws NotificationHubException {
         executeGetDelete(baseUrl + "/api/v1/templates/" + templateId, "DELETE");
     }
 
-    /**
-     * Previews a template by rendering the Handlebars variables against the actual template on the server.
-     */
     public Map<String, String> preview(UUID templateId, Map<String, Object> variables) throws NotificationHubException {
-        try {
-            // Your server expects: {"variables": { ... }}
-            String jsonPayload = objectMapper.writeValueAsString(Map.of("variables", variables));
+        return executePreview(baseUrl + "/api/v1/templates/" + templateId + "/preview", Map.of("variables", variables));
+    }
 
+    // 🟢 ADDED: Render raw HTML strings through the Engine without saving them first
+    public Map<String, String> previewRaw(String rawTemplateHtml, Map<String, Object> variables) throws NotificationHubException {
+        return executePreview(baseUrl + "/api/v1/templates/preview", Map.of(
+                "rawTemplateHtml", rawTemplateHtml,
+                "variables", variables
+        ));
+    }
+
+    private Map<String, String> executePreview(String url, Map<String, Object> payload) {
+        try {
+            String jsonPayload = objectMapper.writeValueAsString(payload);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/v1/templates/" + templateId + "/preview"))
+                    .uri(URI.create(url))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
 
             HttpRequest httpRequest = signer.signRequest(requestBuilder, jsonPayload).build();
@@ -72,16 +72,13 @@ public class TemplateApiClient {
 
             if (response.statusCode() == 200) {
                 return objectMapper.readValue(response.body(), new TypeReference<Map<String, String>>() {});
-            } else {
-                throw new NotificationHubException("Template preview failed", response.statusCode(), response.body());
             }
+            throw new NotificationHubException("Template preview failed", response.statusCode(), response.body());
         } catch (Exception e) {
             if (e instanceof NotificationHubException) throw (NotificationHubException) e;
             throw new NotificationHubException("Network or serialization error", 0, e.getMessage());
         }
     }
-
-    // --- Internal Helper Methods ---
 
     private Map<String, Object> executePostPut(String url, String method, Object body) throws NotificationHubException {
         try {
@@ -109,7 +106,6 @@ public class TemplateApiClient {
                     .uri(URI.create(url))
                     .method(method, HttpRequest.BodyPublishers.noBody());
 
-            // GET and DELETE requests have no payload body to hash, so we pass an empty string
             HttpRequest httpRequest = signer.signRequest(requestBuilder, "").build();
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 

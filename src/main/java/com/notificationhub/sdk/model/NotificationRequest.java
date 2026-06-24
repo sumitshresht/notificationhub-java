@@ -8,20 +8,20 @@ import java.util.Map;
 
 public class NotificationRequest {
     private final List<String> channels;
-    private final Map<String, String> to;
+    private final Map<String, String> to;       // Maps perfectly to Server's 'to'
     private final String templateId;
     private final String subject;
     private final String message;
-    private final Map<String, Object> vars;
-    private final Instant scheduledFor;
+    private final Map<String, Object> vars;     // Maps perfectly to Server's 'vars'
+    private final Instant scheduledFor;         // Maps perfectly to Server's 'scheduledFor'
 
     private NotificationRequest(Builder builder) {
-        this.channels = builder.channels;
-        this.to = builder.to;
+        this.channels = List.copyOf(builder.channels);
+        this.to = Map.copyOf(builder.to);
         this.templateId = builder.templateId;
         this.subject = builder.subject;
         this.message = builder.message;
-        this.vars = builder.vars;
+        this.vars = Map.copyOf(builder.vars);
         this.scheduledFor = builder.scheduledFor;
     }
 
@@ -29,8 +29,16 @@ public class NotificationRequest {
         return new Builder();
     }
 
-    // Getters omitted for brevity...
+    // --- Public Getters for Jackson Serialization ---
+    public List<String> getChannels() { return channels; }
+    public Map<String, String> getTo() { return to; }
+    public String getTemplateId() { return templateId; }
+    public String getSubject() { return subject; }
+    public String getMessage() { return message; }
+    public Map<String, Object> getVars() { return vars; }
+    public Instant getScheduledFor() { return scheduledFor; }
 
+    // --- Fluent Builder Implementation ---
     public static class Builder {
         private final List<String> channels = new ArrayList<>();
         private final Map<String, String> to = new HashMap<>();
@@ -41,7 +49,9 @@ public class NotificationRequest {
         private Instant scheduledFor;
 
         public Builder addChannel(String channel) {
-            this.channels.add(channel.toUpperCase());
+            if (channel != null && !channel.isBlank()) {
+                this.channels.add(channel.toUpperCase());
+            }
             return this;
         }
 
@@ -55,8 +65,13 @@ public class NotificationRequest {
             return this;
         }
 
-        public Builder toPushToken(String token) {
-            this.to.put("token", token);
+        public Builder toWebhook(String url) {
+            this.to.put("url", url);
+            return this;
+        }
+
+        public Builder templateId(String templateId) {
+            this.templateId = templateId;
             return this;
         }
 
@@ -70,24 +85,21 @@ public class NotificationRequest {
             return this;
         }
 
-        public Builder templateId(String templateId) {
-            this.templateId = templateId;
-            return this;
-        }
-
         public Builder addVariable(String key, Object value) {
-            this.vars.put(key, value);
+            if (key != null) {
+                this.vars.put(key, value);
+            }
             return this;
         }
 
-        public Builder scheduleFor(Instant instant) {
-            this.scheduledFor = instant;
+        public Builder scheduleFor(Instant scheduledFor) {
+            this.scheduledFor = scheduledFor;
             return this;
         }
 
         public NotificationRequest build() {
             if (channels.isEmpty()) {
-                throw new IllegalStateException("At least one channel must be specified.");
+                throw new IllegalStateException("At least one dispatch channel must be specified.");
             }
             return new NotificationRequest(this);
         }

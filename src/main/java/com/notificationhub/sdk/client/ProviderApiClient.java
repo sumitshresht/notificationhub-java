@@ -26,19 +26,23 @@ public class ProviderApiClient {
     }
 
     public Map<String, String> configure(String channelType, String providerName, Map<String, String> config) throws NotificationHubException {
-        Map<String, Object> payload = Map.of(
-                "channelType", channelType.toUpperCase(),
-                "providerName", providerName.toUpperCase(),
-                "config", config
-        );
+        Map<String, Object> payload = Map.of("channelType", channelType.toUpperCase(), "providerName", providerName.toUpperCase(), "config", config);
         return execute(baseUrl + "/api/v1/providers/configure", "POST", payload, new TypeReference<Map<String, String>>() {});
     }
 
+    // 🟢 ADDED: Update existing provider
+    public Map<String, Object> update(String channelType, String providerName, Map<String, String> config) throws NotificationHubException {
+        Map<String, Object> payload = Map.of("channelType", channelType.toUpperCase(), "providerName", providerName.toUpperCase(), "config", config);
+        return execute(baseUrl + "/api/v1/providers/" + channelType.toUpperCase(), "PUT", payload, new TypeReference<Map<String, Object>>() {});
+    }
+
+    // 🟢 ADDED: Delete existing provider
+    public void delete(String channelType) throws NotificationHubException {
+        execute(baseUrl + "/api/v1/providers/" + channelType.toUpperCase(), "DELETE", null, new TypeReference<Map<String, Object>>() {});
+    }
+
     public Map<String, Object> testConnection(String channelType, Map<String, String> config) throws NotificationHubException {
-        Map<String, Object> payload = Map.of(
-                "channelType", channelType.toUpperCase(),
-                "config", config
-        );
+        Map<String, Object> payload = Map.of("channelType", channelType.toUpperCase(), "config", config);
         return execute(baseUrl + "/api/v1/providers/test", "POST", payload, new TypeReference<Map<String, Object>>() {});
     }
 
@@ -57,6 +61,7 @@ public class ProviderApiClient {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                if (method.equals("DELETE")) return null;
                 return objectMapper.readValue(response.body(), typeRef);
             }
             throw new NotificationHubException("Provider API Request Failed", response.statusCode(), response.body());

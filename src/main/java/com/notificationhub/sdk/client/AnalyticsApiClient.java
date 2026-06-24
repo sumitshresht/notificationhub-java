@@ -27,37 +27,30 @@ public class AnalyticsApiClient {
         this.baseUrl = baseUrl;
     }
 
-    /**
-     * Fetches real-time delivery and open rate metrics for the current project.
-     */
     public Map<String, Object> getMetrics() throws NotificationHubException {
         return executeGet(baseUrl + "/api/v1/analytics", new TypeReference<Map<String, Object>>() {});
     }
 
-    /**
-     * Fetches the system audit logs with pagination.
-     */
     public List<Map<String, Object>> getAuditLogs(int limit, int offset) throws NotificationHubException {
         String url = String.format("%s/api/v1/audit?limit=%d&offset=%d", baseUrl, limit, offset);
         return executeGet(url, new TypeReference<List<Map<String, Object>>>() {});
     }
 
-    /**
-     * Fetches the Dead Letter Queue (failed notifications) with pagination.
-     */
     public List<Map<String, Object>> getDeadLetterQueue(int limit, int offset) throws NotificationHubException {
         String url = String.format("%s/api/v1/dlq?limit=%d&offset=%d", baseUrl, limit, offset);
         return executeGet(url, new TypeReference<List<Map<String, Object>>>() {});
     }
 
-    /**
-     * Injects a failed notification back into the engine for retry processing.
-     */
+    // 🟢 ADDED: Fetch a specific DLQ Entry
+    public Map<String, Object> getDlqEntry(UUID dlqId) throws NotificationHubException {
+        return executeGet(baseUrl + "/api/v1/dlq/" + dlqId, new TypeReference<Map<String, Object>>() {});
+    }
+
     public Map<String, String> retryFailedNotification(UUID dlqId) throws NotificationHubException {
         try {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/v1/dlq/" + dlqId + "/retry"))
-                    .POST(HttpRequest.BodyPublishers.noBody()); // POST with no body
+                    .POST(HttpRequest.BodyPublishers.noBody());
 
             HttpRequest httpRequest = signer.signRequest(requestBuilder, "").build();
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
@@ -72,15 +65,9 @@ public class AnalyticsApiClient {
         }
     }
 
-    // --- Internal Helper Method ---
-
     private <T> T executeGet(String url, TypeReference<T> responseType) throws NotificationHubException {
         try {
-            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .GET();
-
-            // GET requests have no payload body to hash, so we pass an empty string
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(url)).GET();
             HttpRequest httpRequest = signer.signRequest(requestBuilder, "").build();
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 

@@ -15,10 +15,21 @@ public class TemplateRequest {
         return new Builder();
     }
 
-    // Getters...
-    public String getName() { return name; }
-    public String getSubject() { return subject; }
-    public String getContent() { return content; }
+    // --- Public Getters for Jackson Serialization ---
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    // --- Fluent Builder Implementation ---
 
     public static class Builder {
         private String name;
@@ -41,8 +52,14 @@ public class TemplateRequest {
         }
 
         public TemplateRequest build() {
-            if (name == null || subject == null || content == null) {
-                throw new IllegalStateException("Name, subject, and content are required.");
+            if (name == null || name.isBlank()) {
+                throw new IllegalStateException("Template name is required.");
+            }
+            if (subject == null || subject.isBlank()) {
+                throw new IllegalStateException("Template default subject is required.");
+            }
+            if (content == null || content.isBlank()) {
+                throw new IllegalStateException("Template body content is required.");
             }
             return new TemplateRequest(this);
         }

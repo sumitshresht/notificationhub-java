@@ -33,6 +33,26 @@ public class ProjectApiClient {
         return execute(baseUrl + "/api/v1/projects/" + projectId, "GET", null);
     }
 
+    // 🟢 ADDED: List Projects with Pagination
+    public Map<String, Object> list(int page, int size) throws NotificationHubException {
+        return execute(baseUrl + "/api/v1/projects?page=" + page + "&size=" + size, "GET", null);
+    }
+
+    // 🟢 ADDED: Update Project Status
+    public Map<String, Object> updateStatus(UUID projectId, String status) throws NotificationHubException {
+        return execute(baseUrl + "/api/v1/projects/" + projectId + "/status?status=" + status.toUpperCase(), "PATCH", "");
+    }
+
+    // 🟢 ADDED: Update Project Name
+    public Map<String, Object> updateName(UUID projectId, String newName) throws NotificationHubException {
+        return execute(baseUrl + "/api/v1/projects/" + projectId, "PUT", Map.of("name", newName));
+    }
+
+    // 🟢 ADDED: Delete Project
+    public void delete(UUID projectId) throws NotificationHubException {
+        execute(baseUrl + "/api/v1/projects/" + projectId, "DELETE", null);
+    }
+
     public Map<String, Object> rotateSecret(UUID projectId) throws NotificationHubException {
         return execute(baseUrl + "/api/v1/projects/" + projectId + "/rotate-secret", "POST", "");
     }
@@ -52,6 +72,7 @@ public class ProjectApiClient {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                if (method.equals("DELETE")) return Map.of("status", "success");
                 return objectMapper.readValue(response.body(), new TypeReference<Map<String, Object>>() {});
             }
             throw new NotificationHubException("Project API Request Failed", response.statusCode(), response.body());
