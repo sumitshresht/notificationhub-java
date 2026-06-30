@@ -12,13 +12,14 @@ import java.util.UUID;
 
 public class SdkIntegrationTest {
 
-    // Set this to your Azure Container App URL
-    private static final String SERVER_URL = "https://notification-engine-api.thankfulsea-6bd24791.southeastasia.azurecontainerapps.io";
-
     public static void main(String[] args) {
         System.out.println("🚀 Starting Notification Hub Master E2E Test (35 Methods)...\n");
 
-        NotificationHubClient tempClient = new NotificationHubClient("temp", "temp", SERVER_URL);
+        NotificationHubClient tempClient = new NotificationHubClient.Builder()
+                .apiKey("temp")
+                .apiSecret("temp")
+                .build();
+
         NotificationHubClient client = null;
         UUID projectId = null;
         UUID templateId = null;
@@ -37,7 +38,10 @@ public class SdkIntegrationTest {
             System.out.println("[1/35] ✅ Project.create() passed. API Key: " + apiKey);
 
             // Initialize authenticated client
-            client = new NotificationHubClient(apiKey, rawSecret, SERVER_URL);
+            client = new NotificationHubClient.Builder()
+                    .apiKey(apiKey)
+                    .apiSecret(rawSecret)
+                    .build();
 
             // [2/35] get()
             Map<String, Object> fetchedProject = client.projects().get(projectId);
@@ -55,7 +59,11 @@ public class SdkIntegrationTest {
             // We create a secondary dummy project to test suspension so we don't lock our main client out!
             Map<String, Object> suspendProject = tempClient.projects().create("Suspend_Test_" + System.currentTimeMillis());
             UUID suspendId = UUID.fromString((String) suspendProject.get("id"));
-            NotificationHubClient suspendClient = new NotificationHubClient((String) suspendProject.get("apiKey"), (String) suspendProject.get("rawSecret"), SERVER_URL);
+
+            NotificationHubClient suspendClient = new NotificationHubClient.Builder()
+                    .apiKey((String) suspendProject.get("apiKey"))
+                    .apiSecret((String) suspendProject.get("rawSecret"))
+                    .build();
 
             suspendClient.projects().updateStatus(suspendId, "SUSPENDED");
 
@@ -70,7 +78,12 @@ public class SdkIntegrationTest {
             // [6/35] rotateApiKey()
             Map<String, Object> rotatedKey = client.projects().rotateApiKey(projectId);
             String newApiKey = (String) rotatedKey.get("newApiKey");
-            client = new NotificationHubClient(newApiKey, rawSecret, SERVER_URL); // Update client
+
+            // Update client with new Builder
+            client = new NotificationHubClient.Builder()
+                    .apiKey(newApiKey)
+                    .apiSecret(rawSecret)
+                    .build();
             System.out.println("[6/35] ✅ Project.rotateApiKey() passed. New Key: " + newApiKey);
 
 
@@ -234,7 +247,10 @@ public class SdkIntegrationTest {
             System.out.println("[32/35] ✅ Project.rotateSecret() passed.");
 
             // [33/35] delete (Project)
-            NotificationHubClient finalClient = new NotificationHubClient(newApiKey, newSecret, SERVER_URL);
+            NotificationHubClient finalClient = new NotificationHubClient.Builder()
+                    .apiKey(newApiKey)
+                    .apiSecret(newSecret)
+                    .build();
 
             // Note: Project deletion might fail if you have strict DB foreign keys (e.g. templates linked).
             // Wrapping in try-catch to ensure we register the method call attempt.
